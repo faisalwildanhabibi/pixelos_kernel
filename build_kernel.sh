@@ -367,6 +367,10 @@ build_target() {
     fi
 
     # 2.1 EROFS filesystem configuration (Mandatory for PixelOS Android 14/15/17)
+        # 2.2 Link-Time Optimization (ThinLTO for fast compilation without runner memory starvation)
+    echo "[*] Ensuring ThinLTO is enabled..."
+    scripts/config --file "${OUT_DIR}/.config"         -e LTO_CLANG         -e THINLTO         -d LTO_NONE
+
     echo "[*] Ensuring EROFS filesystem support..."
     scripts/config --file "${OUT_DIR}/.config" \
         -e EROFS_FS \
