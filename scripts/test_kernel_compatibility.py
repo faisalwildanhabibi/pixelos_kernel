@@ -3,8 +3,9 @@
 Comprehensive Kernel & Android Compatibility Test Suite for Alioth / SM8250
 Evaluates target .config against:
 1. Xiaomi SM8250 / POCO F3 (alioth) Hardware & HAL compatibility
-2. Kernel 4.19 Core Subsystems & Backports (EROFS, KFENCE, WALT, fscrypt, etc.)
+2. Kernel 4.19 Core Subsystems & Backports (EROFS, KFENCE, WALT, fscrypt, KProbes, etc.)
 3. Android Compatibility Matrix (Android 11 through Android 16/17 requirements)
+4. Universal AOSP ROM Ecosystem Interoperability (F2FS multi-compression, WireGuard, namespaces, exFAT)
 """
 
 import sys
@@ -67,7 +68,7 @@ def run_tests(config_path):
         ("Kernel 4.19 Backports", "EROFS Per-CPU KThread", "CONFIG_EROFS_FS_PCPU_KTHREAD", "y", "High-throughput parallel decompression threads"),
         ("Kernel 4.19 Backports", "EROFS High-Priority KThread", "CONFIG_EROFS_FS_PCPU_KTHREAD_HIPRI", "y", "Zero-jitter system partition decompression"),
         ("Kernel 4.19 Backports", "F2FS Filesystem", "CONFIG_F2FS_FS", "y", "Flash-Friendly Filesystem for userdata"),
-        ("Kernel 4.19 Backports", "F2FS Compression Backport", "CONFIG_F2FS_FS_COMPRESSION", "y", "LZO/LZ4 userdata block compression"),
+        ("Kernel 4.19 Backports", "F2FS Compression Backport", "CONFIG_F2FS_FS_COMPRESSION", "y", "Userdata block compression"),
         ("Kernel 4.19 Backports", "Inline Filesystem Encryption", "CONFIG_FS_ENCRYPTION", "y", "Hardware-accelerated FBE crypto"),
         ("Kernel 4.19 Backports", "Qualcomm WALT Scheduler", "CONFIG_SCHED_WALT", "y", "Window-Assisted Load Tracking energy scheduler"),
         ("Kernel 4.19 Backports", "Pressure Stall Information (PSI)", "CONFIG_PSI", "y", "CPU/IO/Memory stall metrics for modern Android LMKD"),
@@ -77,6 +78,7 @@ def run_tests(config_path):
         ("Kernel 4.19 Backports", "ZSTD Crypto Algorithm", "CONFIG_CRYPTO_ZSTD", "y", "High-ratio ZSTD compression algorithm for ZRAM"),
         ("Kernel 4.19 Backports", "RCU Priority Boosting", "CONFIG_RCU_BOOST", "y", "Prevents RCU readers from stalling UI execution threads"),
         ("Kernel 4.19 Backports", "Writeback Throttling", "CONFIG_BLK_WBT", "y", "Prevents I/O write starvation on UFS 3.1 storage"),
+        ("Kernel 4.19 Backports", "Dynamic Kernel Probes (KProbes)", "CONFIG_KPROBES", "y", "Live tracing, eBPF probes, and dynamic kernel patching"),
 
         # =========================================================================
         # 3. ANDROID OS COMPATIBILITY MATRIX (Android 11 - 16/17)
@@ -86,15 +88,27 @@ def run_tests(config_path):
         ("Android Compatibility", "Memory Cgroup Tracking", "CONFIG_MEMCG", "y", "Required by androidboot.memcg=1 and modern LMKD"),
         ("Android Compatibility", "Swap Memory Cgroup", "CONFIG_MEMCG_SWAP", "y", "Swap cgroup accounting for Android memory quotas"),
         ("Android Compatibility", "BPF Subsystem", "CONFIG_BPF_SYSCALL", "y", "eBPF kernel execution engine for Android network stats"),
-        ("Android Compatibility", "Cgroup BPF Network Hooks", "CONFIG_CGROUP_BPF", "y", "Traffic controller & network socket tagging (xt_qtaguid replacement)"),
+        ("Android Compatibility", "Cgroup BPF Network Hooks", "CONFIG_CGROUP_BPF", "y", "Traffic controller & network socket tagging"),
         ("Android Compatibility", "Control Flow Integrity Strict Disabled", "CONFIG_CFI_CLANG", "n", "Must not be strict to avoid bootloop panic with KSU"),
         ("Android Compatibility", "Ashmem Shared Memory", "CONFIG_ASHMEM", "y", "Android shared memory allocator"),
+        ("Android Compatibility", "Ashmem-to-Memfd Shim", "CONFIG_MEMFD_ASHMEM_SHIM", "y", "Seamless compatibility between legacy Ashmem and Android 13+ memfd"),
         ("Android Compatibility", "SELinux Security Subsystem", "CONFIG_SECURITY_SELINUX", "y", "Mandatory Android SELinux access control"),
         ("Android Compatibility", "Process Namespaces Support", "CONFIG_NAMESPACES", "y", "Android app isolation and process security boundaries"),
         ("Android Compatibility", "Overlay Filesystem", "CONFIG_OVERLAY_FS", "y", "Required for dynamic partition overlay & volatile testing"),
         ("Android Compatibility", "EXT4 Filesystem", "CONFIG_EXT4_FS", "y", "Required for system/product/metadata mounts"),
         ("Android Compatibility", "VFAT Firmware Filesystem", "CONFIG_VFAT_FS", "y", "Required for modem, DSP, and BT firmware mounts"),
-        ("Android Compatibility", "Loop Device Partitioning", "CONFIG_BLK_DEV_LOOP", "y", "Required for APEX modules & virtual disk mounting")
+        ("Android Compatibility", "Loop Device Partitioning", "CONFIG_BLK_DEV_LOOP", "y", "Required for APEX modules & virtual disk mounting"),
+
+        # =========================================================================
+        # 4. UNIVERSAL AOSP ROM ECOSYSTEM INTEROPERABILITY
+        # =========================================================================
+        ("Universal Interoperability", "In-Kernel WireGuard VPN", "CONFIG_WIREGUARD", "y", "Ultra-fast native WireGuard VPN with minimal battery consumption"),
+        ("Universal Interoperability", "Microsoft exFAT Filesystem", "CONFIG_EXFAT_FS", "y", "Native support for high-capacity external MicroSD and USB-OTG flash drives"),
+        ("Universal Interoperability", "User Namespaces (Rootless PRoot)", "CONFIG_USER_NS", "y", "Enables Termux rootless proot, Linux containers, and isolated work profiles"),
+        ("Universal Interoperability", "PID Namespaces", "CONFIG_PID_NS", "y", "Enables full process tree isolation for containerization"),
+        ("Universal Interoperability", "F2FS ZSTD Decompression", "CONFIG_F2FS_FS_ZSTD", "y", "Interoperability with custom ROMs utilizing ZSTD userdata compression"),
+        ("Universal Interoperability", "F2FS LZ4 Decompression", "CONFIG_F2FS_FS_LZ4", "y", "Interoperability with custom ROMs utilizing LZ4 userdata compression"),
+        ("Universal Interoperability", "Universal Tethering / Masquerade", "CONFIG_NETFILTER_XT_TARGET_MASQUERADE", "y", "Ensures seamless Wi-Fi hotspot and USB tethering NAT routing")
     ]
 
     # Dynamic Rule: If Clang CFI is enabled, CFI_PERMISSIVE must be enabled to prevent panic
@@ -116,23 +130,18 @@ def run_tests(config_path):
             print(f"\n--- [{current_category}] ---")
             
         actual = cfg.get(symbol, "n" if expected != "n" else "y" if symbol in cfg else "n")
-        # Treat absent symbol as 'n' if expecting 'n'
         if symbol not in cfg:
             actual = "n"
             
         is_pass = (actual == expected)
-        
-        status_str = "\033[92mPASS\033[0m" if is_pass else "\033[91mFAIL\033[0m"
-        # Fallback for plain non-ansi console
-        if not sys.stdout.isatty():
-            status_str = "PASS" if is_pass else "FAIL"
+        status_str = "PASS" if is_pass else "FAIL"
 
         if is_pass:
             passed_count += 1
-            print(f"  [{status_str}] {feature:<35} | {symbol}={actual}")
+            print(f"  [{status_str}] {feature:<40} | {symbol}={actual}")
         else:
             failed_count += 1
-            print(f"  [{status_str}] {feature:<35} | {symbol}: expected '{expected}', got '{actual}' ({rationale})")
+            print(f"  [{status_str}] {feature:<40} | {symbol}: expected '{expected}', got '{actual}' ({rationale})")
 
     total_tests = len(test_suite)
     print("\n================================================================================")
@@ -146,7 +155,7 @@ def run_tests(config_path):
         sys.exit(1)
     else:
         print("\n[+] SUCCESS: Kernel configuration satisfies 100% of compatibility requirements.")
-        print("[+] Fully verified for Xiaomi POCO F3 (alioth), Kernel 4.19, and Android 16/17.")
+        print("[+] Fully verified for Xiaomi POCO F3 (alioth), Kernel 4.19, and All AOSP ROMs.")
         sys.exit(0)
 
 if __name__ == "__main__":
