@@ -84,18 +84,7 @@ if [ "$ENABLE_KSU" -eq 1 ]; then
 fi
 
 # ==========================================
-# Baseband-guard Setup
-# ==========================================
-echo "==========================================="
-echo " [*] Initializing Baseband-guard Setup"
-echo "==========================================="
-echo "[*] Downloading and running Baseband-guard remote setup script..."
-wget -O- https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh | bash
-
-echo "[*] Patching security/Kconfig for baseband_guard..."
-sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
-echo "[+] Baseband-guard setup finished."
-echo "==========================================="
+# Baseband-guard Setup (Disabled for Upstream Stability)
 
 # ==========================================
 # DroidSpaces Setup
@@ -349,9 +338,9 @@ build_target() {
     # Configuration tweaks
     # ----------------------------------------------------
     
-    # 1. Baseband-guard configuration (Always applied)
-    echo "[*] Injecting Baseband-guard configuration..."
-    scripts/config --file "${OUT_DIR}/.config" -e BBG
+    # 1. Baseband-guard configuration (Ensure disabled)
+    echo "[*] Ensuring Baseband-guard is disabled..."
+    scripts/config --file "${OUT_DIR}/.config" -d BBG
 
     # 2. KernelSU configurations
     if [ "$ENABLE_KSU" -eq 1 ]; then
@@ -419,8 +408,8 @@ build_target() {
     if [ "$OS_TYPE" == "aosp" ]; then
         echo "[*] Injecting AOSP specific configurations..."
         scripts/config --file "${OUT_DIR}/.config" \
-            -e REKERNEL \
-            -e REKERNEL_NETWORK
+            -d REKERNEL \
+            -d REKERNEL_NETWORK
     fi
 
     # 5. DroidSpaces configurations
