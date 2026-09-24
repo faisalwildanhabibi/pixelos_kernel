@@ -434,6 +434,17 @@ build_target() {
     make "${MAKE_OPTS[@]}" olddefconfig
 
     # ----------------------------------------------------
+    # Automated Compatibility Test Suite
+    # ----------------------------------------------------
+    echo "==========================================="
+    echo " [*] Running Kernel 4.19 & Android Compatibility Test Suite"
+    echo "==========================================="
+    python3 scripts/test_kernel_compatibility.py "${OUT_DIR}/.config"
+    echo "[+] Compatibility verification passed successfully!"
+    echo "==========================================="
+
+
+    # ----------------------------------------------------
     # Compilation
     # ----------------------------------------------------
     echo "[*] Building kernel..."
