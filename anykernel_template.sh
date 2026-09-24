@@ -7,7 +7,7 @@ properties() { '
 kernel.string=APTKernel Pure Universal for Poco F3 (alioth)
 do.devicecheck=1
 do.modules=0
-do.systemless=1
+do.systemless=0
 do.cleanup=1
 do.cleanuponabort=0
 device.name1=alioth
@@ -33,12 +33,10 @@ ramdisk_compression=auto;
 # import patching functions/variables - see for reference
 . tools/ak3-core.sh;
 
-## AnyKernel file attributes
-set_perm_recursive 0 0 750 750 $ramdisk/* 2>/dev/null;
-
 ## AnyKernel install
-dump_boot;
+# Zero-Ramdisk-Touch: Unpack boot image header only, replace kernel Image, and directly repack boot.img
+# This preserves the ROM's generic ramdisk 100% untouched byte-for-byte, preserving SELinux contexts, xattrs, and capabilities!
+split_boot;
 
-# Universal pure kernel: preserve ROM ramdisk completely, no dtbo, no dtb override
-write_boot;
+flash_boot;
 ## end install
