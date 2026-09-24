@@ -87,8 +87,7 @@ def run_tests(config_path):
         ("Android Compatibility", "Swap Memory Cgroup", "CONFIG_MEMCG_SWAP", "y", "Swap cgroup accounting for Android memory quotas"),
         ("Android Compatibility", "BPF Subsystem", "CONFIG_BPF_SYSCALL", "y", "eBPF kernel execution engine for Android network stats"),
         ("Android Compatibility", "Cgroup BPF Network Hooks", "CONFIG_CGROUP_BPF", "y", "Traffic controller & network socket tagging (xt_qtaguid replacement)"),
-        ("Android Compatibility", "Clang CFI Permissive", "CONFIG_CFI_PERMISSIVE", "y", "Prevents fatal kernel panic on syscall hooks / KSU / SuSFS"),
-        ("Android Compatibility", "Control Flow Integrity Disabled", "CONFIG_CFI_CLANG", "n", "Must not be strict to avoid bootloop panic with KSU"),
+        ("Android Compatibility", "Control Flow Integrity Strict Disabled", "CONFIG_CFI_CLANG", "n", "Must not be strict to avoid bootloop panic with KSU"),
         ("Android Compatibility", "Ashmem Shared Memory", "CONFIG_ASHMEM", "y", "Android shared memory allocator"),
         ("Android Compatibility", "SELinux Security Subsystem", "CONFIG_SECURITY_SELINUX", "y", "Mandatory Android SELinux access control"),
         ("Android Compatibility", "Process Namespaces Support", "CONFIG_NAMESPACES", "y", "Android app isolation and process security boundaries"),
@@ -97,6 +96,10 @@ def run_tests(config_path):
         ("Android Compatibility", "VFAT Firmware Filesystem", "CONFIG_VFAT_FS", "y", "Required for modem, DSP, and BT firmware mounts"),
         ("Android Compatibility", "Loop Device Partitioning", "CONFIG_BLK_DEV_LOOP", "y", "Required for APEX modules & virtual disk mounting")
     ]
+
+    # Dynamic Rule: If Clang CFI is enabled, CFI_PERMISSIVE must be enabled to prevent panic
+    if cfg.get("CONFIG_CFI_CLANG") == "y":
+        test_suite.append(("Android Compatibility", "Clang CFI Permissive Mode", "CONFIG_CFI_PERMISSIVE", "y", "Must be permissive when CFI is on to prevent panic with KSU"))
 
     print("================================================================================")
     print("      COMPREHENSIVE KERNEL & ANDROID COMPATIBILITY TEST SUITE")
