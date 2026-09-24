@@ -108,7 +108,21 @@ def run_tests(config_path):
         ("Universal Interoperability", "PID Namespaces", "CONFIG_PID_NS", "y", "Enables full process tree isolation for containerization"),
         ("Universal Interoperability", "F2FS ZSTD Decompression", "CONFIG_F2FS_FS_ZSTD", "y", "Interoperability with custom ROMs utilizing ZSTD userdata compression"),
         ("Universal Interoperability", "F2FS LZ4 Decompression", "CONFIG_F2FS_FS_LZ4", "y", "Interoperability with custom ROMs utilizing LZ4 userdata compression"),
-        ("Universal Interoperability", "Universal Tethering / Masquerade", "CONFIG_IP_NF_TARGET_MASQUERADE", "y", "Ensures seamless Wi-Fi hotspot and USB tethering NAT routing")
+        ("Universal Interoperability", "Universal Tethering / Masquerade", "CONFIG_IP_NF_TARGET_MASQUERADE", "y", "Ensures seamless Wi-Fi hotspot and USB tethering NAT routing"),
+
+        # =========================================================================
+        # 5. PIXELOS ANDROID 16 FBE V2 & HARDWARE SECURITY ALIGNMENT
+        # =========================================================================
+        ("Security and Encryption", "Kernel Keyring Facility", "CONFIG_KEYS", "y", "Mandatory keystore infrastructure for Android synthetic password"),
+        ("Security and Encryption", "32-bit Compat Keyring", "CONFIG_KEYS_COMPAT", "y", "Required for 32-bit Keymaster/KeyMint HAL compat"),
+        ("Security and Encryption", "Qualcomm Inline Crypto Engine (ICE)", "CONFIG_CRYPTO_DEV_QCOM_ICE", "y", "Hardware UFS 3.1 inline crypto for FBE v2"),
+        ("Security and Encryption", "Filesystem Inline Encryption", "CONFIG_FS_ENCRYPTION_INLINE_CRYPT", "y", "Direct inline encryption pass-through to ICE"),
+        ("Security and Encryption", "Device-Mapper Default Key", "CONFIG_DM_DEFAULT_KEY", "y", "Metadata encryption on /dev/block/by-name/userdata"),
+        ("Security and Encryption", "Block Inline Encryption", "CONFIG_BLK_INLINE_ENCRYPTION", "y", "Block layer inline encryption dispatch"),
+        ("Security and Encryption", "Qualcomm QSEECOM Interface", "CONFIG_QSEECOM", "y", "TrustZone communication for KeyMint hardware keys"),
+        ("Security and Encryption", "SELinux CheckReqProt Strict Zero", "CONFIG_SECURITY_SELINUX_CHECKREQPROT_VALUE", "0", "Required by Android 12-16 to allow bionic mprotect checks"),
+        ("Security and Encryption", "SELinux Development Permissive Mode", "CONFIG_SECURITY_SELINUX_DEVELOP", "y", "Allows permissive fallback to prevent hard bootloops"),
+        ("Security and Encryption", "F2FS Fair RWSEM Checkpoint Protection", "CONFIG_F2FS_UNFAIR_RWSEM", "n", "Must be disabled to prevent race conditions during checkpoint flushes")
     ]
 
     # Dynamic Rule: If Clang CFI is enabled, CFI_PERMISSIVE must be enabled to prevent panic
