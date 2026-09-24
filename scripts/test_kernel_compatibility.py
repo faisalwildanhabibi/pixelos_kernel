@@ -60,6 +60,9 @@ def run_tests(config_path):
         ("Xiaomi Alioth Hardware", "Consumer IR SPI Driver", "CONFIG_IR_SPI", "y", "IR remote control blaster hardware"),
         ("Xiaomi Alioth Hardware", "QCA CLD3 Wi-Fi 6", "CONFIG_QCA_CLD_WLAN", "y", "Qualcomm FastConnect 6900 Wi-Fi subsystem"),
         ("Xiaomi Alioth Hardware", "ALSA SoC Audio Core", "CONFIG_SND_SOC", "y", "Audio HAL and TFA amplifier backend"),
+        ("Xiaomi Alioth Hardware", "Qualcomm Alioth Platform", "CONFIG_MACH_XIAOMI_ALIOTH", "y", "POCO F3 board platform identification"),
+        ("Xiaomi Alioth Hardware", "Qualcomm RPMh Power Regulators", "CONFIG_REGULATOR_QCOM_RPMH", "y", "PM8250 power management IC regulator driver (prevents freeze at millisecond 0)"),
+        ("Xiaomi Alioth Hardware", "Qualcomm RPMh Core Driver", "CONFIG_QCOM_RPMH", "y", "Resource Power Manager Hardened communication bus"),
 
         # =========================================================================
         # 2. KERNEL 4.19 CORE SUBSYSTEMS & MODERN BACKPORTS
@@ -122,7 +125,16 @@ def run_tests(config_path):
         ("Security and Encryption", "Qualcomm QSEECOM Interface", "CONFIG_QSEECOM", "y", "TrustZone communication for KeyMint hardware keys"),
         ("Security and Encryption", "SELinux CheckReqProt Strict Zero", "CONFIG_SECURITY_SELINUX_CHECKREQPROT_VALUE", "0", "Required by Android 12-16 to allow bionic mprotect checks"),
         ("Security and Encryption", "SELinux Development Permissive Mode", "CONFIG_SECURITY_SELINUX_DEVELOP", "y", "Allows permissive fallback to prevent hard bootloops"),
-        ("Security and Encryption", "F2FS Fair RWSEM Checkpoint Protection", "CONFIG_F2FS_UNFAIR_RWSEM", "n", "Must be disabled to prevent race conditions during checkpoint flushes")
+        ("Security and Encryption", "F2FS Fair RWSEM Checkpoint Protection", "CONFIG_F2FS_UNFAIR_RWSEM", "n", "Must be disabled to prevent race conditions during checkpoint flushes"),
+
+        # =========================================================================
+        # 6. BUILD INTEGRITY & ANTI-BOOTLOOP ENFORCEMENTS
+        # =========================================================================
+        ("Anti-Bootloop Integrity", "Disable Baseband-guard (BBG)", "CONFIG_BBG", "n", "Must be disabled to prevent LSM conflicts and modem SSR crash loops on AOSP"),
+        ("Anti-Bootloop Integrity", "Disable In-Tree BPF Preload", "CONFIG_BPF_PRELOAD", "n", "Must be disabled; Android utilizes userspace bpfloader and in-kernel UMD causes incbin link failure"),
+        ("Anti-Bootloop Integrity", "Disable In-Tree BPF Preload UMD", "CONFIG_BPF_PRELOAD_UMD", "n", "Must be disabled to prevent userprogs link failure"),
+        ("Anti-Bootloop Integrity", "Disable ReKernel Core", "CONFIG_REKERNEL", "n", "Must be disabled to prevent Binder IPC race conditions and boot animation hang on Android 16"),
+        ("Anti-Bootloop Integrity", "Disable ReKernel Network Hooks", "CONFIG_REKERNEL_NETWORK", "n", "Must be disabled on pristine AOSP to prevent networking stalls")
     ]
 
     # Dynamic Rule: If Clang CFI is enabled, CFI_PERMISSIVE must be enabled to prevent panic
