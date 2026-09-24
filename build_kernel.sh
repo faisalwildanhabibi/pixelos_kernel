@@ -340,7 +340,7 @@ build_target() {
     
     # 1. Baseband-guard configuration (Ensure disabled)
     echo "[*] Ensuring Baseband-guard is disabled..."
-    scripts/config --file "${OUT_DIR}/.config" -d BBG
+    scripts/config --file "${OUT_DIR}/.config" -d BBG -d BPF_PRELOAD -d BPF_PRELOAD_UMD
 
     # 2. KernelSU configurations
     if [ "$ENABLE_KSU" -eq 1 ]; then
