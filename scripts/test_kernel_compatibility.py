@@ -108,7 +108,7 @@ def run_tests(config_path):
         ("Universal Interoperability", "PID Namespaces", "CONFIG_PID_NS", "y", "Enables full process tree isolation for containerization"),
         ("Universal Interoperability", "F2FS ZSTD Decompression", "CONFIG_F2FS_FS_ZSTD", "y", "Interoperability with custom ROMs utilizing ZSTD userdata compression"),
         ("Universal Interoperability", "F2FS LZ4 Decompression", "CONFIG_F2FS_FS_LZ4", "y", "Interoperability with custom ROMs utilizing LZ4 userdata compression"),
-        ("Universal Interoperability", "Universal Tethering / Masquerade", "CONFIG_NETFILTER_XT_TARGET_MASQUERADE", "y", "Ensures seamless Wi-Fi hotspot and USB tethering NAT routing")
+        ("Universal Interoperability", "Universal Tethering / Masquerade", "CONFIG_IP_NF_TARGET_MASQUERADE", "y", "Ensures seamless Wi-Fi hotspot and USB tethering NAT routing")
     ]
 
     # Dynamic Rule: If Clang CFI is enabled, CFI_PERMISSIVE must be enabled to prevent panic
