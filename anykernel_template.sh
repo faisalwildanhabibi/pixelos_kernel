@@ -1,10 +1,10 @@
 ### AnyKernel3 Ramdisk Mod Script
-### Poco F3 (alioth / aliothin) - Pure Kernel Installer for PixelOS / AOSP / Custom ROMs
+### Poco F3 (alioth / aliothin) - Universal Pure Kernel Installer for All AOSP ROMs (PixelOS, crDroid, EvoX, etc.)
 
 ## AnyKernel setup
 # begin properties
 properties() { '
-kernel.string=APTKernel Pure for Poco F3 (alioth)
+kernel.string=APTKernel Pure Universal for Poco F3 (alioth)
 do.devicecheck=1
 do.modules=0
 do.systemless=1
@@ -12,7 +12,12 @@ do.cleanup=1
 do.cleanuponabort=0
 device.name1=alioth
 device.name2=aliothin
+device.name3=alioth_global
+device.name4=M2012K11AG
+device.name5=
 supported.versions=
+supported.patchlevels=
+supported.vendorpatchlevels=
 '; } # end properties
 
 # shell variables
@@ -34,6 +39,6 @@ set_perm_recursive 0 0 750 750 $ramdisk/* 2>/dev/null;
 ## AnyKernel install
 dump_boot;
 
-# Pure kernel: preserve ramdisk completely, no dtbo, no dtb override
+# Universal pure kernel: preserve ROM ramdisk completely, no dtbo, no dtb override
 write_boot;
 ## end install
