@@ -242,22 +242,20 @@ EOF
 fi
 
 # ==========================================
-# AnyKernel3 Setup
+# AnyKernel3 Setup (Pure Kernel Mode)
 # ==========================================
 echo "==========================================="
-echo " [*] Initializing AnyKernel3 Workspace"
+echo " [*] Initializing AnyKernel3 Workspace (Pure Kernel Mode)"
 echo "==========================================="
 rm -rf anykernel
 echo "[*] Cloning AnyKernel3..."
 git clone https://github.com/AstideLabs/AnyKernel3 -b kona --single-branch --depth=1 anykernel
 echo "[+] AnyKernel3 cloned successfully."
-echo "[*] Adjusting AnyKernel3..."
+echo "[*] Installing Pure Kernel AnyKernel3 Template..."
+cp -f anykernel_template.sh anykernel/anykernel.sh
 sed -i "s/^device\.name1=.*/device.name1=${DEVICE_NAME}\ndevice.name2=${DEVICE_NAME}in/" anykernel/anykernel.sh
-# Preserve stock PixelOS 12-table DTBO on AOSP
-sed -i 's/flash_generic dtbo;/# flash_generic dtbo; (preserve stock ROM DTBO)/g' anykernel/anykernel.sh
-sed -i 's/ && \[ -f \$AKHOME\/kernels\/\$os\/dtbo\.img \]//g' anykernel/anykernel.sh
-sed -i 's/mv \$AKHOME\/kernels\/\$os\/dtbo\.img/# mv \$AKHOME\/kernels\/\$os\/dtbo\.img/g' anykernel/anykernel.sh
-echo "[*] AnyKernel3 adjusted successfully."
+rm -rf anykernel/kernels anykernel/dtb anykernel/dtbo.img anykernel/modules
+echo "[*] Pure AnyKernel3 prepared successfully."
 echo "==========================================="
 
 # ==========================================
@@ -449,20 +447,13 @@ build_target() {
         echo "[+] $OS_TYPE Build Successful!"
         echo "[+] Kernel Image path: ${OUT_DIR}/arch/arm64/boot/Image"
 
-        echo "[*] Packaging to AnyKernel3 ($OS_TYPE)..."
-        # 确保独立打包：清空现有的 kernels 目录
-        rm -rf anykernel/kernels/*
-        mkdir -p "anykernel/kernels/${OS_TYPE}/"
+        echo "[*] Packaging Pure Kernel to AnyKernel3 ($OS_TYPE)..."
+        rm -rf anykernel/kernels anykernel/dtb anykernel/dtbo.img anykernel/modules anykernel/Image
         
-        cp "${OUT_DIR}/arch/arm64/boot/Image" "anykernel/kernels/${OS_TYPE}/"
-        cp "${OUT_DIR}/arch/arm64/boot/dtb" "anykernel/kernels/${OS_TYPE}/"
+        # Copy compiled pure kernel Image directly to AnyKernel3 root
+        cp "${OUT_DIR}/arch/arm64/boot/Image" "anykernel/Image"
         
-        # Only include dtbo.img for MIUI, preserve stock ROM multi-table DTBO for AOSP
-        if [ "$OS_TYPE" == "miui" ] && [ -f "${OUT_DIR}/arch/arm64/boot/dtbo.img" ]; then
-            cp "${OUT_DIR}/arch/arm64/boot/dtbo.img" "anykernel/kernels/${OS_TYPE}/"
-        fi
-        
-        # 确定 ZIP 文件名
+        # Determine ZIP Filename
         local KSU_ZIP_STR="NoKernelSU"
         if [ "$ENABLE_KSU" -eq 1 ]; then
             KSU_ZIP_STR="ReSukiSU-SuSFS"
@@ -473,10 +464,8 @@ build_target() {
         fi
         local GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD 2>/dev/null || echo "unknown")
         local OS_UPPER=$(echo "$OS_TYPE" | tr '[:lower:]' '[:upper:]')
-        local ZIP_FILENAME="APTKernel_${OS_UPPER}_${DEVICE_NAME}_${KSU_ZIP_STR}${DS_ZIP_STR}_$(date +'%Y%m%d_%H%M%S')_anykernel3_${GIT_COMMIT_ID}.zip"
+        local ZIP_FILENAME="APTKernel_Pure_${OS_UPPER}_${DEVICE_NAME}_${KSU_ZIP_STR}${DS_ZIP_STR}_$(date +'%Y%m%d_%H%M%S')_anykernel3_${GIT_COMMIT_ID}.zip"
         
-        echo "[*] Zipping $ZIP_FILENAME ..."
-        pushd anykernel > /dev/null
         zip -r9 "$ZIP_FILENAME" ./* -x .git .gitignore out/ ./*.zip > /dev/null
         mv "$ZIP_FILENAME" ../
         popd > /dev/null
