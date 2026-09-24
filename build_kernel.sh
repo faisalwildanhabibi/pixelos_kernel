@@ -252,7 +252,11 @@ echo "[*] Cloning AnyKernel3..."
 git clone https://github.com/AstideLabs/AnyKernel3 -b kona --single-branch --depth=1 anykernel
 echo "[+] AnyKernel3 cloned successfully."
 echo "[*] Adjusting AnyKernel3..."
-sed -i "s/^device\.name1=.*/device.name1=${DEVICE_NAME}/" anykernel/anykernel.sh
+sed -i "s/^device\.name1=.*/device.name1=${DEVICE_NAME}\ndevice.name2=${DEVICE_NAME}in/" anykernel/anykernel.sh
+# Preserve stock PixelOS 12-table DTBO on AOSP
+sed -i 's/flash_generic dtbo;/# flash_generic dtbo; (preserve stock ROM DTBO)/g' anykernel/anykernel.sh
+sed -i 's/ && \[ -f \$AKHOME\/kernels\/\$os\/dtbo\.img \]//g' anykernel/anykernel.sh
+sed -i 's/mv \$AKHOME\/kernels\/\$os\/dtbo\.img/# mv \$AKHOME\/kernels\/\$os\/dtbo\.img/g' anykernel/anykernel.sh
 echo "[*] AnyKernel3 adjusted successfully."
 echo "==========================================="
 
@@ -357,8 +361,19 @@ build_target() {
         scripts/config --file "${OUT_DIR}/.config" \
             -e KSU \
             -e THREAD_INFO_IN_TASK \
-            -e KSU_SUSFS
+            -e KSU_SUSFS \
+            -d CFI \
+            -d CFI_CLANG \
+            -d CFI_CLANG_SHADOW \
+            -e CFI_PERMISSIVE
     fi
+
+    # 2.1 EROFS filesystem configuration (Mandatory for PixelOS Android 14/15/17)
+    echo "[*] Ensuring EROFS filesystem support..."
+    scripts/config --file "${OUT_DIR}/.config" \
+        -e EROFS_FS \
+        -e EROFS_FS_PCPU_KTHREAD \
+        -e EROFS_FS_PCPU_KTHREAD_HIPRI
 
     # 3. MIUI configurations
     if [ "$OS_TYPE" == "miui" ]; then
@@ -442,7 +457,8 @@ build_target() {
         cp "${OUT_DIR}/arch/arm64/boot/Image" "anykernel/kernels/${OS_TYPE}/"
         cp "${OUT_DIR}/arch/arm64/boot/dtb" "anykernel/kernels/${OS_TYPE}/"
         
-        if [ -f "${OUT_DIR}/arch/arm64/boot/dtbo.img" ]; then
+        # Only include dtbo.img for MIUI, preserve stock ROM multi-table DTBO for AOSP
+        if [ "$OS_TYPE" == "miui" ] && [ -f "${OUT_DIR}/arch/arm64/boot/dtbo.img" ]; then
             cp "${OUT_DIR}/arch/arm64/boot/dtbo.img" "anykernel/kernels/${OS_TYPE}/"
         fi
         
