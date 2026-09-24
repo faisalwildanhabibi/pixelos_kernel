@@ -1,4 +1,4 @@
-name: Build Kernel
+name: Build Pure Kernel
 
 on:
   workflow_dispatch:
@@ -44,7 +44,7 @@ on:
 
 jobs:
   build-kernel:
-    name: Build ${{ github.event.inputs.device }} | KSU:${{ github.event.inputs.ksu }} | OS:${{ github.event.inputs.target_os }} | DS:${{ github.event.inputs.droidspaces }}
+    name: Build Pure ${{ github.event.inputs.device }} | KSU:${{ github.event.inputs.ksu }} | OS:${{ github.event.inputs.target_os }}
     runs-on: ubuntu-latest
     
     steps:
@@ -66,10 +66,10 @@ jobs:
       uses: actions/cache@v6
       with:
         path: ~/.cache/ccache_mikernel
-        key: ${{ runner.os }}-kernel-ccache-${{ github.event.inputs.device }}-${{ github.run_id }}
+        key: ${{ runner.os }}-pure-kernel-ccache-${{ github.event.inputs.device }}-${{ github.run_id }}
         restore-keys: |
-          ${{ runner.os }}-kernel-ccache-${{ github.event.inputs.device }}-
-          ${{ runner.os }}-kernel-ccache-
+          ${{ runner.os }}-pure-kernel-ccache-${{ github.event.inputs.device }}-
+          ${{ runner.os }}-pure-kernel-ccache-
 
     - name: Setup zyc-clang 16 Toolchain
       run: |
@@ -99,9 +99,9 @@ jobs:
         echo "Executing command: ./build_kernel.sh $ARGS"
         ./build_kernel.sh $ARGS
 
-    - name: Upload Flashable ZIP
+    - name: Upload Pure Flashable ZIP
       uses: actions/upload-artifact@v7
       with:
-        name: APTKernel-${{ github.event.inputs.device }}-${{ github.event.inputs.target_os }}-${{ github.run_id }}
-        path: APTKernel_*.zip
+        name: APTKernel-Pure-${{ github.event.inputs.device }}-${{ github.event.inputs.target_os }}-${{ github.run_id }}
+        path: APTKernel_Pure_*.zip
         compression-level: 0
