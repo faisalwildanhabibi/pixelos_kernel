@@ -2206,10 +2206,12 @@ out:
 		zram_set_entry(zram, index, entry);
 		zram_set_obj_size(zram, index, comp_len);
 
+#ifdef CONFIG_ZRAM_WRITEBACK
 		if((100 * (PAGE_SIZE - comp_len)/PAGE_SIZE) < glow_compress_ratio) {
 			zram_set_flag(zram, index, ZRAM_COMPRESS_LOW);
 			atomic64_inc(&zram->stats.lowratio_pages);
 		}
+#endif /* CONFIG_ZRAM_WRITEBACK */
 	}
 	zram_slot_unlock(zram, index);
 
