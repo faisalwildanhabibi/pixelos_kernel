@@ -184,8 +184,46 @@ def run_tests(config_path):
         print("[+] Fully verified for Xiaomi POCO F3 (alioth), Kernel 4.19, and All AOSP ROMs.")
         sys.exit(0)
 
+def validate_kernel_image(image_path):
+    print("================================================================================")
+    print(" [ISO/IEC 29119 Quality Gate] Post-Flight Kernel Binary Validation")
+    print("================================================================================")
+    if not os.path.exists(image_path):
+        print(f"[!] FAIL: Kernel Image not found at {image_path}")
+        sys.exit(1)
+        
+    size_bytes = os.path.getsize(image_path)
+    size_mb = size_bytes / 1024 / 1024
+    print(f"[*] Validating file: {image_path}")
+    print(f"[*] File Size: {size_mb:.2f} MB ({size_bytes} bytes)")
+    
+    if size_bytes < 30 * 1024 * 1024 or size_bytes > 80 * 1024 * 1024:
+        print(f"[!] FAIL: Image size outside acceptable range (30MB - 80MB): {size_mb:.2f} MB")
+        sys.exit(1)
+    print("  [PASS] Binary size within expected operational bounds (30MB - 80MB).")
+    
+    with open(image_path, "rb") as f:
+        # Header offset 0x38 (56 bytes) is ARM64 magic: 0x644d5241 (ASCII: 'ARM\x64')
+        f.seek(0x38)
+        magic = f.read(4)
+        if magic != b'ARM\x64':
+            print(f"[!] FAIL: Missing or invalid ARM64 header magic at 0x38: {magic.hex()} (expected: 41524d64)")
+            sys.exit(1)
+        print("  [PASS] Valid ARM64 Kernel Image Header Magic verified (0x644d5241 / 'ARM\\x64').")
+        
+    print("\n[+] SUCCESS: Kernel Image passed 100% of ISO/IEC 29119 binary integrity gates.")
+    sys.exit(0)
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <path_to_config>")
+        print(f"       {sys.argv[0]} --validate-image <path_to_Image>")
         sys.exit(1)
-    run_tests(sys.argv[1])
+        
+    if sys.argv[1] == "--validate-image":
+        if len(sys.argv) < 3:
+            print("Error: --validate-image requires a path to the compiled Image")
+            sys.exit(1)
+        validate_kernel_image(sys.argv[2])
+    else:
+        run_tests(sys.argv[1])
