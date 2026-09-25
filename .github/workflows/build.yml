@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       device:
-        description: 'Target Device Code (设备代号)'
+        description: 'Target Device Code (Device Name)'
         required: true
         default: 'alioth'
         type: choice
@@ -28,7 +28,7 @@ on:
         type: boolean
         default: true
       target_os:
-        description: 'Target OS (目标系统)'
+        description: 'Target OS ()'
         required: true
         type: choice
         default: 'aosp'
@@ -126,7 +126,7 @@ jobs:
 
     - name: ccache Statistics & Performance Audit (ISO/IEC 25010)
       run: |
-        echo "### ⚡ ccache Performance Audit" >> $GITHUB_STEP_SUMMARY
+        echo "###  ccache Performance Audit" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         ccache -s | tee -a $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
@@ -134,7 +134,7 @@ jobs:
     - name: Cryptographic Checksum & Release Integrity (ISO/IEC 27001 & SLSA)
       run: |
         sha256sum APTKernel_Pure_*.zip > SHA256SUMS
-        echo "### 🛡️ ISO/IEC 27001 Cryptographic Release Integrity" >> $GITHUB_STEP_SUMMARY
+        echo "###  ISO/IEC 27001 Cryptographic Release Integrity" >> $GITHUB_STEP_SUMMARY
         echo "| Artifact | SHA-256 Checksum |" >> $GITHUB_STEP_SUMMARY
         echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
         while read -r sum file; do
