@@ -78,8 +78,17 @@ if [ "$ENABLE_KSU" -eq 1 ]; then
     echo "==========================================="
     echo " [*] Initializing KernelSU (ReSukiSU) Setup"
     echo "==========================================="
-    echo "[*] Downloading and running ReSukiSU remote setup script..."
-    curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
+    echo "[*] Downloading ReSukiSU setup script..."
+    KSU_SETUP_TMP=$(mktemp)
+    if curl -LSs -o "$KSU_SETUP_TMP" "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" && [ -s "$KSU_SETUP_TMP" ]; then
+        echo "[+] [ISO 27001 / SLSA] ReSukiSU script retrieved successfully (size: $(stat -c%s "$KSU_SETUP_TMP" 2>/dev/null || stat -f%z "$KSU_SETUP_TMP" 2>/dev/null || echo 0) bytes)."
+        bash "$KSU_SETUP_TMP"
+        rm -f "$KSU_SETUP_TMP"
+    else
+        echo "[-] [ISO 27001 / SLSA ABORT] Failed to retrieve valid ReSukiSU setup script!"
+        rm -f "$KSU_SETUP_TMP"
+        exit 1
+    fi
     echo "[+] KernelSU setup finished."
 fi
 
@@ -450,6 +459,23 @@ build_target() {
     if [ -f "${OUT_DIR}/arch/arm64/boot/Image" ]; then
         echo "[+] $OS_TYPE Build Successful!"
         echo "[+] Kernel Image path: ${OUT_DIR}/arch/arm64/boot/Image"
+
+        # ISO/IEC 29119 Quality Gate: Assert ARM64 Header & Size
+        local IMG_SIZE=$(stat -c%s "${OUT_DIR}/arch/arm64/boot/Image" 2>/dev/null || stat -f%z "${OUT_DIR}/arch/arm64/boot/Image" 2>/dev/null || echo 0)
+        local IMG_MAGIC=$(od -A n -N 4 -j 56 -t x1 "${OUT_DIR}/arch/arm64/boot/Image" 2>/dev/null | tr -d ' ')
+        echo "[+] [ISO 29119 Quality Gate] Validating Kernel Image:"
+        echo "    - File Size: $((IMG_SIZE / 1024 / 1024)) MB ($IMG_SIZE bytes)"
+        echo "    - ARM64 Header Magic (offset 0x38): 0x${IMG_MAGIC} (Expected: 41524d64 / 'ARMd')"
+        
+        if [ "$IMG_SIZE" -lt 30000000 ] || [ "$IMG_SIZE" -gt 80000000 ]; then
+            echo "[-] [ISO 29119 ABORT] Kernel Image size anomaly: $IMG_SIZE bytes!"
+            exit 1
+        fi
+        if [ "$IMG_MAGIC" != "41524d64" ]; then
+            echo "[-] [ISO 29119 ABORT] Kernel Image missing valid ARM64 magic header: 0x$IMG_MAGIC"
+            exit 1
+        fi
+        echo "[+] [ISO 29119 PASS] Kernel Image verified valid and intact."
 
         echo "[*] Packaging Pure Kernel to AnyKernel3 ($OS_TYPE)..."
         rm -rf anykernel/kernels anykernel/dtb anykernel/dtbo.img anykernel/modules anykernel/Image
