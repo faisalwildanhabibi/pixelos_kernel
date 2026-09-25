@@ -53,16 +53,14 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Set up Environment
+    - name: Set up Environment (ISO/IEC 12207 Primitives)
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc bison build-essential ccache curl flex gawk \
-          git gnupg gperf imagemagick libncurses-dev \
-          lib32readline-dev lib32z1-dev liblz4-tool \
-          libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync \
-          schedtool squashfs-tools xsltproc zip zlib1g-dev python3 libelf-dev
-          
-    - name: Cache ccache
+        sudo apt-get install -y --no-install-recommends \
+          bc bison build-essential ccache curl flex gawk git gnupg \
+          libelf-dev libncurses-dev libssl-dev lzop python3 rsync zip zlib1g-dev
+
+    - name: Cache ccache (ISO/IEC 25010 Efficiency)
       uses: actions/cache@v6
       with:
         path: ~/.cache/ccache_mikernel
@@ -71,16 +69,30 @@ jobs:
           ${{ runner.os }}-pure-kernel-ccache-${{ github.event.inputs.device }}-
           ${{ runner.os }}-pure-kernel-ccache-
 
+    - name: Cache zyc-clang 16 Toolchain (ISO/IEC 12207 Reproducibility)
+      id: cache-clang
+      uses: actions/cache@v6
+      with:
+        path: ~/zyc-clang
+        key: zyc-clang-16.0.6-20260807
+
     - name: Setup zyc-clang 16 Toolchain
+      if: steps.cache-clang.outputs.cache-hit != 'true'
       run: |
         mkdir -p $HOME/zyc-clang
         cd $HOME/zyc-clang
         wget -q https://github.com/ZyCromerZ/Clang/releases/download/16.0.6-20260807-release/Clang-16.0.6-20260807.tar.gz
         tar -zxf Clang-16.0.6-20260807.tar.gz
+        rm -f Clang-16.0.6-20260807.tar.gz
 
-    - name: Pre-Validate Defconfig Compatibility Matrix
+    - name: Pre-Flight: Validate Defconfig Compatibility Matrix (ISO/IEC 29119)
       run: |
         python3 scripts/test_kernel_compatibility.py arch/arm64/configs/${{ github.event.inputs.device }}_defconfig
+
+    - name: Configure ccache
+      run: |
+        ccache -M 5G
+        ccache -z
 
     - name: Run Build Script
       run: |
@@ -103,9 +115,37 @@ jobs:
         echo "Executing command: ./build_kernel.sh $ARGS"
         ./build_kernel.sh $ARGS
 
-    - name: Upload Pure Flashable ZIP
+    - name: Post-Flight: Validate Compiled Kernel Image (ISO/IEC 29119)
+      run: |
+        if [ -f "out_aosp/arch/arm64/boot/Image" ]; then
+          python3 scripts/test_kernel_compatibility.py --validate-image out_aosp/arch/arm64/boot/Image
+        fi
+        if [ -f "out_miui/arch/arm64/boot/Image" ]; then
+          python3 scripts/test_kernel_compatibility.py --validate-image out_miui/arch/arm64/boot/Image
+        fi
+
+    - name: ccache Statistics & Performance Audit (ISO/IEC 25010)
+      run: |
+        echo "### ⚡ ccache Performance Audit" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        ccache -s | tee -a $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+    - name: Cryptographic Checksum & Release Integrity (ISO/IEC 27001 & SLSA)
+      run: |
+        sha256sum APTKernel_Pure_*.zip > SHA256SUMS
+        echo "### 🛡️ ISO/IEC 27001 Cryptographic Release Integrity" >> $GITHUB_STEP_SUMMARY
+        echo "| Artifact | SHA-256 Checksum |" >> $GITHUB_STEP_SUMMARY
+        echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+        while read -r sum file; do
+          echo "| \`$file\` | \`$sum\` |" >> $GITHUB_STEP_SUMMARY
+        done < SHA256SUMS
+
+    - name: Upload Pure Flashable ZIP & SHA256SUMS
       uses: actions/upload-artifact@v7
       with:
         name: APTKernel-Pure-${{ github.event.inputs.device }}-${{ github.event.inputs.target_os }}-${{ github.run_id }}
-        path: APTKernel_Pure_*.zip
+        path: |
+          APTKernel_Pure_*.zip
+          SHA256SUMS
         compression-level: 0
