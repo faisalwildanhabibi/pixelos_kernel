@@ -49,7 +49,7 @@ jobs:
     
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v4
       with:
         fetch-depth: 1
 
@@ -61,7 +61,7 @@ jobs:
           libelf-dev libncurses-dev libssl-dev lzop python3 rsync zip zlib1g-dev
 
     - name: Cache ccache (ISO/IEC 25010 Efficiency)
-      uses: actions/cache@v6
+      uses: actions/cache@v4
       with:
         path: ~/.cache/ccache_mikernel
         key: ${{ runner.os }}-pure-kernel-ccache-${{ github.event.inputs.device }}-${{ github.run_id }}
@@ -71,7 +71,7 @@ jobs:
 
     - name: Cache zyc-clang 16 Toolchain (ISO/IEC 12207 Reproducibility)
       id: cache-clang
-      uses: actions/cache@v6
+      uses: actions/cache@v4
       with:
         path: ~/zyc-clang
         key: zyc-clang-16.0.6-20260807
@@ -142,7 +142,7 @@ jobs:
         done < SHA256SUMS
 
     - name: Upload Pure Flashable ZIP & SHA256SUMS
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v4
       with:
         name: APTKernel-Pure-${{ github.event.inputs.device }}-${{ github.event.inputs.target_os }}-${{ github.run_id }}
         path: |
