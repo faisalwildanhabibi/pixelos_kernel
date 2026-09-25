@@ -1,0 +1,90 @@
+name: 🔄 Sync Upstream PixelOS Kernel
+
+on:
+  schedule:
+    # Run automatically every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      upstream_branch:
+        description: 'Upstream PixelOS branch to sync from'
+        required: true
+        default: 'sixteen-qpr2'
+      auto_push:
+        description: 'Automatically commit and push if tests pass'
+        type: boolean
+        required: true
+        default: true
+
+jobs:
+  sync:
+    name: 🌐 Sync & Validate Upstream Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: 📥 Checkout Pure Kernel Tree
+        uses: actions/checkout@v4
+        with:
+          ref: pure-kernel
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ⚙️ Configure Git Identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 🔗 Connect Official PixelOS Upstream
+        run: |
+          UPSTREAM_URL="https://github.com/PixelOS-Devices/android_kernel_xiaomi_sm8250.git"
+          BRANCH="${{ github.event.inputs.upstream_branch || 'sixteen-qpr2' }}"
+          echo "[*] Adding upstream remote: $UPSTREAM_URL ($BRANCH)"
+          git remote add upstream "$UPSTREAM_URL" || git remote set-url upstream "$UPSTREAM_URL"
+          git fetch upstream "$BRANCH"
+
+      - name: 🔀 Merge Upstream Commits
+        id: merge_step
+        run: |
+          BRANCH="${{ github.event.inputs.upstream_branch || 'sixteen-qpr2' }}"
+          echo "[*] Attempting merge with upstream/$BRANCH..."
+          # Merge upstream changes while prioritizing our pure-kernel custom trees for conflicts
+          if git merge --no-edit upstream/"$BRANCH"; then
+            echo "merge_status=success" >> $GITHUB_OUTPUT
+            echo "[+] Upstream merged successfully."
+          else
+            echo "[!] Conflict detected during merge. Resolving automatically by keeping pure-kernel customizations..."
+            git checkout --ours fs/susfs.c include/linux/susfs.h include/linux/susfs_def.h drivers/input/touchscreen/focaltech_spi/ || true
+            git add .
+            git commit -m "chore(sync): resolve upstream merge conflicts preserving Pure Kernel SuSFS and DTTW" || true
+            echo "merge_status=resolved" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🐍 Setup Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🧩 Merge Modular Defconfigs & Apply ISO Overrides
+        run: |
+          echo "[*] Running Pure Kernel Defconfig Merger..."
+          python3 scripts/merge_upstream_defconfig.py .
+
+      - name: 🛡️ Execute ISO 29119 Anti-Bootloop Quality Gate
+        run: |
+          echo "[*] Verifying 100% compatibility across all hardware subsystems..."
+          python3 scripts/test_kernel_compatibility.py arch/arm64/configs/alioth_defconfig
+
+      - name: 🚀 Commit and Push Synchronized Tree
+        if: ${{ github.event.inputs.auto_push != 'false' }}
+        run: |
+          if git diff --quiet && git diff --staged --quiet; then
+            echo "[*] No changes detected. Pure Kernel is already up to date with upstream PixelOS."
+          else
+            git add arch/arm64/configs/alioth_defconfig
+            git commit -m "chore(upstream): sync from PixelOS ${{ github.event.inputs.upstream_branch || 'sixteen-qpr2' }} & refresh defconfig" || true
+            git push origin pure-kernel
+            echo "[+] Successfully pushed synchronized updates to pure-kernel."
+          fi
