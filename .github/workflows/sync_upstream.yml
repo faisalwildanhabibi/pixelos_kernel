@@ -43,7 +43,7 @@ jobs:
           BRANCH="${{ github.event.inputs.upstream_branch || 'sixteen-qpr2' }}"
           echo "[*] Adding upstream remote: $UPSTREAM_URL ($BRANCH)"
           git remote add upstream "$UPSTREAM_URL" || git remote set-url upstream "$UPSTREAM_URL"
-          git fetch upstream "$BRANCH"
+          git fetch upstream "$BRANCH" --depth=50
 
       - name: 🔀 Merge Upstream Commits
         id: merge_step
@@ -85,6 +85,7 @@ jobs:
           else
             git add arch/arm64/configs/alioth_defconfig
             git commit -m "chore(upstream): sync from PixelOS ${{ github.event.inputs.upstream_branch || 'sixteen-qpr2' }} & refresh defconfig" || true
+            git pull --rebase origin pure-kernel
             git push origin pure-kernel
             echo "[+] Successfully pushed synchronized updates to pure-kernel."
           fi
